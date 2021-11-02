@@ -47,9 +47,21 @@ public class TCPClient {
      * in the process of being closed. with "synchronized" keyword we make sure
      * that no two threads call this method in parallel.
      */
-    public synchronized void disconnect() {
-        // TODO Step 4: implement this method
-        // Hint: remember to check if connection is active
+    public synchronized boolean disconnect() {
+        //changed from public synchronized void disconnect().
+        boolean valid;
+        if (isConnectionActive()) {
+            try {
+                socket.close();
+                valid = true;
+            } catch (IOException e) {
+                valid = false;
+            }
+        } else {
+            valid = true;
+        }
+
+        return valid;
     }
 
     /**
@@ -79,11 +91,10 @@ public class TCPClient {
         // TODO Step 2: implement this method
         // Hint: Reuse sendCommand() method
         // Hint: update lastError if you want to store the reason for the error.
-        boolean cmdSent = sendCommand("msg");
-        boolean messageSent = false;
-        if (cmdSent){
-            messageSent = sendMessage(message, socket);
-        }
+
+        String command = "msg " + message;
+        boolean messageSent = sendMessage(command, socket);
+
         return messageSent;
     }
 
@@ -132,6 +143,8 @@ public class TCPClient {
     public void tryLogin(String username) {
         // TODO Step 3: implement this method
         // Hint: Reuse sendCommand() method
+        String login = "login " + username;
+        sendMessage(login, socket);
     }
 
     /**
@@ -163,8 +176,23 @@ public class TCPClient {
         // TODO Step 3: Implement this method
         // TODO Step 4: If you get I/O Exception or null from the stream, it means that something has gone wrong
         // with the stream and hence the socket. Probably a good idea to close the socket in that case.
+        String oneResponseLine = null;
+        if (isConnectionActive() == true){
+            try {
+                InputStream in = socket.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+                do {
+                    oneResponseLine = bufferedReader.readLine();
+                    if (oneResponseLine != null) {
+                        System.out.println(oneResponseLine);
+                    }
+                } while (oneResponseLine == null);
+            } catch(IOException exception){
+                oneResponseLine = null;
+            }
+        }
 
-        return null;
+        return oneResponseLine;
     }
 
     /**
@@ -203,6 +231,15 @@ public class TCPClient {
             // and act on it.
             // Hint: In Step 3 you need to handle only login-related responses.
             // Hint: In Step 3 reuse onLoginResult() method
+            String response = waitServerResponse();
+            String loginResult = onLoginResult();
+            if (response != null && loginResult == true){
+                //loginok
+            } else {
+                //Loginerror
+            }
+
+
 
             // TODO Step 5: update this method, handle user-list response from the server
             // Hint: In Step 5 reuse onUserList() method
