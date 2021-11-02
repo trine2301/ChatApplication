@@ -22,7 +22,7 @@ public class TCPClient {
      * @param port TCP port to use
      * @return True when connection established, false on error
      */
-    private boolean connect(String host, int port) {
+    public boolean connect(String host, int port) {
         System.out.println("Client started ...");
         boolean valid;
         try {
@@ -66,9 +66,7 @@ public class TCPClient {
      * @return true on success, false otherwise
      */
     private boolean sendCommand(String cmd) {
-        // TODO Step 2: Implement this method
-        // Hint: Remember to check if connection is active
-        return false;
+        return sendMessage(cmd, socket);
     }
 
     /**
@@ -81,8 +79,50 @@ public class TCPClient {
         // TODO Step 2: implement this method
         // Hint: Reuse sendCommand() method
         // Hint: update lastError if you want to store the reason for the error.
-        return false;
+        boolean cmdSent = sendCommand("msg");
+        boolean messageSent = false;
+        if (cmdSent){
+            messageSent = sendMessage(message, socket);
+        }
+        return messageSent;
     }
+
+    /**
+     * Send a private message to a single recipient.
+     *
+     * @param recipient username of the chat user who should receive the message
+     * @param message   Message to send
+     * @return true if message sent, false on error
+     */
+    public boolean sendPrivateMessage(String recipient, String message) {
+        // TODO Step 6: Implement this method
+        // Hint: Reuse sendCommand() method
+        // Hint: update lastError if you want to store the reason for the error.
+        return sendMessage(recipient, socket);
+    }
+
+    /**
+     * Sends message to socket.
+     * @param message the message sent to socket
+     * @param socket Socket that receives the message.
+     * @return True when message successfully sent, false on error.
+     */
+    private boolean sendMessage(String message, Socket socket) {
+        boolean valid = false;
+        if (isConnectionActive()) {
+            try {
+                String commandToSend = message;
+                PrintWriter writer = getSocketWriter(socket);
+                writer.println(commandToSend);
+                writer.println("");
+                valid = true;
+            } catch (IOException exception) {
+                valid = false;
+            }
+        }
+        return valid;
+    }
+
 
     /**
      * Send a login request to the chat server.
@@ -102,20 +142,6 @@ public class TCPClient {
         // TODO Step 5: implement this method
         // Hint: Use Wireshark and the provided chat client reference app to find out what commands the
         // client and server exchange for user listing.
-    }
-
-    /**
-     * Send a private message to a single recipient.
-     *
-     * @param recipient username of the chat user who should receive the message
-     * @param message   Message to send
-     * @return true if message sent, false on error
-     */
-    public boolean sendPrivateMessage(String recipient, String message) {
-        // TODO Step 6: Implement this method
-        // Hint: Reuse sendCommand() method
-        // Hint: update lastError if you want to store the reason for the error.
-        return false;
     }
 
 
@@ -285,5 +311,17 @@ public class TCPClient {
      */
     private void onSupported(String[] commands) {
         // TODO Step 8: Implement this method
+    }
+
+    /**
+     * Makes a buffered writer for the socket.
+     * @param socket the socket the writer is for
+     * @return A writer for the socket
+     * @throws IOException gets thrown if the bufferedWriter could not be made.
+     */
+    private synchronized PrintWriter getSocketWriter(Socket socket) throws IOException {
+        PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+        return writer;
     }
 }
