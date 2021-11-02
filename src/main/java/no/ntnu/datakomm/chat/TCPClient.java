@@ -8,7 +8,7 @@ import java.util.List;
 public class TCPClient {
     private PrintWriter toServer;
     private BufferedReader fromServer;
-    private Socket connection;
+    private Socket socket;
 
     // Hint: if you want to store a message for the last error, store it here
     private String lastError = null;
@@ -16,17 +16,26 @@ public class TCPClient {
     private final List<ChatListener> listeners = new LinkedList<>();
 
     /**
-     * Connect to a chat server.
+     * Try to establish TCP connection to the server (the three-way handshake).
      *
-     * @param host host name or IP address of the chat server
-     * @param port TCP port of the chat server
-     * @return True on success, false otherwise
+     * @param host The remote host to connect to. Can be domain (localhost, ntnu.no, etc), or IP address
+     * @param port TCP port to use
+     * @return True when connection established, false on error
      */
-    public boolean connect(String host, int port) {
-        // TODO Step 1: implement this method
-        // Hint: Remember to process all exceptions and return false on error
-        // Hint: Remember to set up all the necessary input/output stream variables
-        return false;
+    private boolean connect(String host, int port) {
+        System.out.println("Client started ...");
+        boolean valid;
+        try {
+            // Establish connection to the remote server
+            socket = new Socket(host, port);
+            System.out.println("Successfully connected");
+            valid = true;
+
+        } catch (IOException e) {
+            System.out.println("Socket error: " + e.getMessage());
+            valid = false;
+        }
+        return valid;
     }
 
     /**
@@ -47,7 +56,7 @@ public class TCPClient {
      * @return true if the connection is active (opened), false if not.
      */
     public boolean isConnectionActive() {
-        return connection != null;
+        return socket != null;
     }
 
     /**
