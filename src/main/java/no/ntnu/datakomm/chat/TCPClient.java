@@ -47,21 +47,25 @@ public class TCPClient {
      * in the process of being closed. with "synchronized" keyword we make sure
      * that no two threads call this method in parallel.
      */
-    public synchronized boolean disconnect() {
-        //changed from public synchronized void disconnect().
+    public synchronized void disconnect() {
+        //Should also call onDisconnect() to notify listeners
         boolean valid;
+        String errorMessage = null;
         if (isConnectionActive()) {
             try {
                 socket.close();
                 valid = true;
+
             } catch (IOException e) {
                 valid = false;
+                errorMessage = "Socket could not be closed";
             }
         } else {
             valid = true;
         }
 
-        return valid;
+        onDisconnect(valid, errorMessage);
+
     }
 
     /**
@@ -188,7 +192,7 @@ public class TCPClient {
                     }
                 } while (oneResponseLine == null);
             } catch(IOException exception){
-                oneResponseLine = null;
+                disconnect();
             }
         }
 
@@ -232,11 +236,16 @@ public class TCPClient {
             // Hint: In Step 3 you need to handle only login-related responses.
             // Hint: In Step 3 reuse onLoginResult() method
             String response = waitServerResponse();
-            String loginResult = onLoginResult();
-            if (response != null && loginResult == true){
-                //loginok
+
+            if (response != null){
+                if (response.equals("loginok")){
+                    onLoginResult(true, null);
+                } else if (response.equals("loginerror")){
+                    onLoginResult(false, response);
+                }
+
             } else {
-                //Loginerror
+                //todo fix later
             }
 
 
@@ -297,9 +306,16 @@ public class TCPClient {
      * Notify listeners that socket was closed by the remote end (server or
      * Internet error)
      */
-    private void onDisconnect() {
+    private void onDisconnect(boolean success, String errMsg) {
         // TODO Step 4: Implement this method
         // Hint: all the onXXX() methods will be similar to onLoginResult()
+        if (success) {
+            for (ChatListener l : listeners) {
+                l.onDisconnect();
+            }
+        } else {
+            lastError = errMsg;
+        }
     }
 
     /**
